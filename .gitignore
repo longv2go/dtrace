@@ -3,3 +3,4 @@ dtrace.xcodeproj/project.xcworkspace/
 dtrace.xcodeproj/xcuserdata/
 dtrace_dof_kext/dtrace_dof.xcodeproj/xcuserdata/
 tags
+.DS_Store
