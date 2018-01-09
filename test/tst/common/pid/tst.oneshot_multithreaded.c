@@ -17,7 +17,7 @@ int ready_threads = 0;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
 
-
+int pthread_set_fixedpriority_self();// come out of libpthread
 /*
  * This requires f and g to be on the same page
  */

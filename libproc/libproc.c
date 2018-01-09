@@ -40,7 +40,7 @@
 
 #if !TARGET_OS_EMBEDDED
 #include <sys/csr.h>
-#include <sandbox/rootless.h>
+//#include <sandbox/rootless.h>
 #endif
 
 // This must be done *after* any references to Foundation.h!
@@ -148,8 +148,8 @@ static struct ps_prochandle* createProcAndSymbolicator(pid_t pid, task_t task, i
 		proc->proc_activity_queue_enabled = true;
 	uint32_t flags = kCSSymbolicatorTrackDyldActivity;
 
-	if (_dtrace_disallow_dsym)
-		flags |= kCSSymbolicatorDisallowDsymData;
+//    if (_dtrace_disallow_dsym)
+//        flags |= kCSSymbolicatorDisallowDsymData;
 
 	CSSymbolicatorRef symbolicator = CSSymbolicatorCreateWithTaskFlagsAndNotification(task, flags, ^(uint32_t notification_type, CSNotificationData data) {
 		switch (notification_type) {

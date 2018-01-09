@@ -50,8 +50,10 @@
 #include <sys/sysctl.h>
 #include <pthread.h>
 
-#include <System/sys/csr.h>
+#include <sys/csr.h>
 #include <TargetConditionals.h>
+
+int pthread_set_fixedpriority_self();// come out of libpthread
 
 typedef struct dtrace_cmd {
 	void (*dc_func)(struct dtrace_cmd *);	/* function to compile arg */
