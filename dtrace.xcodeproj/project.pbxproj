@@ -12726,6 +12726,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = "";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				TEST_INSTALL_PATH = "${APPLE_INTERNAL_DIR}/Tests/dtrace";
 			};
 			name = Debug;
@@ -12745,6 +12746,7 @@
 					"-DNDEBUG",
 					"-DNS_BLOCK_ASSERTIONS",
 				);
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				TEST_INSTALL_PATH = "${APPLE_INTERNAL_DIR}/Tests/dtrace";
 			};
 			name = Release;

@@ -726,6 +726,7 @@ dtrace_proc_grab(dtrace_hdl_t *dtp, pid_t pid, int flags)
 	return (P);
 }
 
+int pid_resume(int pid);
 struct ps_prochandle *
 dtrace_proc_waitfor(dtrace_hdl_t *dtp, char const *pname)
 {
