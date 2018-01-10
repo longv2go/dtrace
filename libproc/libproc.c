@@ -40,7 +40,7 @@
 
 #if !TARGET_OS_EMBEDDED
 #include <sys/csr.h>
-#include <sandbox/rootless.h>
+//#include <sandbox/rootless.h>
 #endif
 
 // This must be done *after* any references to Foundation.h!
@@ -78,7 +78,7 @@ canAttachToProcess(pid_t pid)
 	 * following entitlements: com.apple.security.get-task-allow
 	 */
 	if (csr_check(CSR_ALLOW_TASK_FOR_PID) != 0) {
-		canAttach = rootless_allows_task_for_pid(pid);
+//		canAttach = rootless_allows_task_for_pid(pid);
 	}
 #endif
 
