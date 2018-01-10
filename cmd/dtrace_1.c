@@ -50,11 +50,6 @@
 #include <sys/sysctl.h>
 #include <pthread.h>
 
-#include <sys/csr.h>
-#include <TargetConditionals.h>
-
-int pthread_set_fixedpriority_self();// come out of libpthread
-
 typedef struct dtrace_cmd {
 	void (*dc_func)(struct dtrace_cmd *);	/* function to compile arg */
 	dtrace_probespec_t dc_spec;		/* probe specifier context */
@@ -105,8 +100,6 @@ static int g_exec = 1;
 static int g_mode = DMODE_EXEC;
 static int g_status = E_SUCCESS;
 static int g_grabanon = 0;
-static int g_proc_created_grabbed = 0;
-static int g_wait_proc = 0;
 static const char *g_ofile = NULL;
 static const char *g_script_name = NULL;
 static FILE *g_ofp = NULL;
@@ -686,10 +679,9 @@ exec_prog(const dtrace_cmd_t *dcp)
 	} else if (dtrace_program_exec(g_dtp, dcp->dc_prog, &dpi) == -1) {
 		dfatal("failed to enable '%s'", dcp->dc_name);
 	} else {
-		if (!(dpi.dpi_matches == 0 && (g_wait_proc && !g_proc_created_grabbed)))
-			notice("%s '%s' matched %u probe%s\n",
-			    dcp->dc_desc, dcp->dc_name,
-			    dpi.dpi_matches, dpi.dpi_matches == 1 ? "" : "s");
+		notice("%s '%s' matched %u probe%s\n",
+		    dcp->dc_desc, dcp->dc_name,
+		    dpi.dpi_matches, dpi.dpi_matches == 1 ? "" : "s");
 	}
 
 	if (g_verbose) {
@@ -980,7 +972,7 @@ compile_str(dtrace_cmd_t *dcp)
 	char *p;
 
 	if ((dcp->dc_prog = dtrace_program_strcompile(g_dtp, dcp->dc_arg,
-	    dcp->dc_spec, g_cflags, g_argc, g_argv)) == NULL)
+	    dcp->dc_spec, g_cflags | DTRACE_C_PSPEC, g_argc, g_argv)) == NULL)
 		dfatal("invalid probe specifier %s", dcp->dc_arg);
 
 	if ((p = strpbrk(dcp->dc_arg, "{/;")) != NULL)
@@ -1397,33 +1389,6 @@ go(void)
 	}
 }
 
-#define DTRACE_PRIORITY_FOREGROUND 47
-
-static void
-set_sched_policy() {
-	int policy, err;
-	struct sched_param param;
-
-	err = pthread_getschedparam(pthread_self(), &policy, &param);
-	if (err) {
-		notice("could not set thread priority: cannot retrieve thread scheduling parameters");
-		return;
-	}
-
-	param.sched_priority = DTRACE_PRIORITY_FOREGROUND;
-
-	err = pthread_setschedparam(pthread_self(), policy, &param);
-	if (err) {
-		notice("could not set thread priority to %d", param.sched_priority);
-	}
-
-	err = pthread_set_fixedpriority_self();
-	if (err) {
-		notice("could not set thread scheduling priority to fixed");
-	}
-
-}
-
 /*ARGSUSED*/
 static void
 intr(int signo)
@@ -1584,22 +1549,6 @@ main(int argc, char *argv[])
 				}
 				/* NOTREACHED */
 
-			case 'x':
-				if ((p = strchr(optarg, '=')) != NULL)
-					*p++ = '\0';
-				/*
-				 * At that stage, only parse disallow_dsym
-				 * that we need to be set before dtrace_open
-				 */
-
-				if (strcmp(optarg, "disallow_dsym") == 0) {
-					_dtrace_disallow_dsym = 1;
-				}
-				// Restore the option string
-				if (p != NULL)
-					*(--p) = '=';
-
-				break;
 			default:
 				if (strchr(DTRACE_OPTSTR, c) == NULL)
 					return (usage(stderr));
@@ -1625,12 +1574,6 @@ main(int argc, char *argv[])
 
 	if (g_mode == DMODE_VERS)
 		return (printf("%s: %s\n", g_pname, _dtrace_version) <= 0);
-
-#if !TARGET_OS_EMBEDDED
-	if (g_mode != DMODE_HEADER && csr_check(CSR_ALLOW_UNRESTRICTED_DTRACE) != 0) {
-		notice("system integrity protection is on, some features will not be available\n");
-	}
-#endif
 
 	/*
 	 * D compiler target_arch is current_kernel_arch() by default.
@@ -1909,7 +1852,6 @@ main(int argc, char *argv[])
 
 				g_psv[g_psc++] = P;
 				free(v);
-				g_proc_created_grabbed++;
 				break;
 
 			case 'p':
@@ -1924,7 +1866,6 @@ main(int argc, char *argv[])
 					dfatal(NULL); /* dtrace_errmsg() only */
 
 				g_psv[g_psc++] = P;
-				g_proc_created_grabbed++;
 				break;
 
 			case 'W':
@@ -1932,7 +1873,6 @@ main(int argc, char *argv[])
 				if (P == NULL)
 					dfatal(NULL);
 				g_psv[g_psc++] = P;
-				g_wait_proc++;
 				break;
 
 			case 'a':
@@ -2108,11 +2048,6 @@ main(int argc, char *argv[])
 	 */
 	if (g_total == 0 && !g_grabanon && !(g_cflags & DTRACE_C_ZDEFS))
 		dfatal("no probes %s\n", g_cmdc ? "matched" : "specified");
-
-	/**
-	 * Set our scheduling policy
-	 */
-	set_sched_policy();
 
 	/*
 	 * Start tracing.  Once we dtrace_go(), reload any options that affect

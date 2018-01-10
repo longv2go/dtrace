@@ -35,7 +35,7 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
+
 
 BEGIN
 {
@@ -47,14 +47,14 @@ BEGIN
 
 }
 
-tick-10ms
+tick-1
 /nint != int_1/
 {
 	printf("Unexpected error nint = %x, expected %x\n", nint, int_1);
 	exit(1);
 }
 
-tick-10ms
+tick-1
 /nint == int_1/
 {
 	exit(0);

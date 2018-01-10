@@ -39,7 +39,7 @@
 
 BEGIN
 {
-	printf("\nreal_ncpus = %d\n", `real_ncpus);
+	printf("\nmax_ncpus = %d\n", `max_ncpus);
 	printf("ERROR: no case for kernel scoped scalar!\n");
 	x = 123;
 	printf("x = %u\n", x);

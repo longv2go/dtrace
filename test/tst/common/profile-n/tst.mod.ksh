@@ -27,7 +27,7 @@
 
 script()
 {
-	$dtrace -xnolibs -qs /dev/stdin <<EOF
+	$dtrace -qs /dev/stdin <<EOF
 	profile-1234hz
 	/arg0 != 0/
 	{
@@ -65,7 +65,7 @@ child=$!
 # "genunix") did some work -- so that's all we'll check.
 #
 if [ -f /usr/lib/dtrace/darwin.d ]; then
-script | tee /dev/fd/2 | grep 'kernel\|mach' > /dev/null
+script | tee /dev/fd/2 | grep mach_kernel > /dev/null
 else
 script | tee /dev/fd/2 | grep unix > /dev/null
 fi

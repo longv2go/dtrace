@@ -43,20 +43,12 @@ dtrace:::BEGIN
 	printf("Tracing... Hit Ctrl-C to end.\n");
 }
 
-syscall::read:entry,
-syscall::read_nocancel:entry,
-syscall::readv_nocancel:entry,
-syscall::pread_nocancel:entry
+syscall::*read*:entry
 {
 	@calls[pid, execname, "R"] = sum(arg0);
 }
 
-syscall::write:entry,
-syscall::writev:entry,
-syscall::pwrite:entry,
-syscall::write_nocancel:entry,
-syscall::writev_nocancel:entry,
-syscall::pwrite_nocancel:entry
+syscall::*write*:entry
 {
 	@calls[pid, execname, "W"] = sum(arg0);
 }

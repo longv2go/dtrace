@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/ksh
+# #!/usr/bin/ksh
 #
 # sampleproc - sample processes on the CPUs.
 #              Written using DTrace (Solaris 10 3/05).

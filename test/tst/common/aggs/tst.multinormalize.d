@@ -37,7 +37,6 @@
 #pragma D option quiet
 #pragma D option aggrate=1ms
 #pragma D option switchrate=50ms
-#pragma D option statusrate=300ms
 
 BEGIN
 {
@@ -45,7 +44,7 @@ BEGIN
 	start = timestamp;
 }
 
-tick-10ms
+tick-100ms
 /i < 20/
 {
 	@func1[i % 5] = sum(i * 100);
@@ -53,7 +52,7 @@ tick-10ms
 	i++;
 }
 
-tick-10ms
+tick-100ms
 /i == 20/
 {
 	printf("normalized data #1:\n");

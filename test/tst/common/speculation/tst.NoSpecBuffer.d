@@ -35,14 +35,13 @@
  *
  */
 #pragma D option quiet
-#pragma D option statusrate=10ms
 
 BEGIN
 {
 	i = 0;
 }
 
-profile:::profile-10ms
+syscall::open:entry
 /i < 2/
 {
 	self->spec = speculation();
@@ -50,14 +49,14 @@ profile:::profile-10ms
 	i++;
 }
 
-profile:::profile-10ms
+syscall:::
 /(2 == i) && (0 == self->spec)/
 {
 	printf("i: %d\tself->spec: %d", i, self->spec);
 	exit(0);
 }
 
-profile:::profile-10ms
+syscall:::
 /(2 == i) && (0 != self->spec)/
 {
 	printf("i: %d\tself->spec: %d", i, self->spec);

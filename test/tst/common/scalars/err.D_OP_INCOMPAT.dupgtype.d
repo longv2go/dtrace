@@ -36,6 +36,6 @@
 
 BEGIN
 {
-	x = `real_ncpus;
+	x = `max_ncpus;
 	x = *`rootvp;
 }

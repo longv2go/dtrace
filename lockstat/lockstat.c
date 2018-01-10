@@ -134,20 +134,18 @@ typedef struct ls_event_info {
 
 static ls_event_info_t g_event_info[LS_MAX_EVENTS] = {
 #if defined(__i386__) || defined(__x86_64__)
-	{ 'C',	"Lock",	"Adaptive mutex spin",			"abs",
+	{ 'C',	"Lock",	"Adaptive mutex spin",			"nsec",
 	    "lockstat:::adaptive-spin" },
 #endif
-	{ 'C', "Lock", "Spin lock spin", 			"abs",
-	    "lockstat:::spin-spin" },
-	{ 'C',	"Lock",	"Adaptive mutex block",			"abs",
+	{ 'C',	"Lock",	"Adaptive mutex block",			"nsec",
 	    "lockstat:::adaptive-block" },
-	{ 'C',	"Lock",	"R/W writer blocked by writer",		"abs",
+	{ 'C',	"Lock",	"R/W writer blocked by writer",		"nsec",
 	    "lockstat:::rw-block", "arg2 == 0 && arg3 == 1" },
-	{ 'C',	"Lock",	"R/W writer blocked by readers",	"abs",
+	{ 'C',	"Lock",	"R/W writer blocked by readers",	"nsec",
 	    "lockstat:::rw-block", "arg2 == 0 && arg3 == 0 && arg4" },
-	{ 'C',	"Lock",	"R/W reader blocked by writer",		"abs",
+	{ 'C',	"Lock",	"R/W reader blocked by writer",		"nsec",
 	    "lockstat:::rw-block", "arg2 != 0 && arg3 == 1" },
-	{ 'C',	"Lock",	"R/W reader blocked by write wanted",	"abs",
+	{ 'C',	"Lock",	"R/W reader blocked by write wanted",	"nsec",
 	    "lockstat:::rw-block", "arg2 != 0 && arg3 == 0 && arg4" },
 	{ 'C',	"Lock",	"R/W reader spin",	"nsec",
 	    "lockstat:::rw-spin"},
@@ -178,9 +176,12 @@ static ls_event_info_t g_event_info[LS_MAX_EVENTS] = {
 	{ 'H',	"Lock",	"Adaptive mutex hold",			"nsec",
 	    "lockstat:::adaptive-release", NULL,
 	    "lockstat:::adaptive-acquire" },
+#if LATER
+	/* not implemented in the kernel yet, but it would be nice to have them */
 	{ 'H',	"Lock",	"Spin lock hold",			"nsec",
 	    "lockstat:::spin-release", NULL,
 	    "lockstat:::spin-acquire" },
+#endif
 	{ 'H',	"Lock",	"R/W writer hold",			"nsec",
 	    "lockstat:::rw-release", "arg1 == 0",
 	    "lockstat:::rw-acquire" },
@@ -1625,18 +1626,15 @@ main(int argc, char **argv)
 static char *
 format_symbol(char *buf, uintptr_t addr, int show_size)
 {
-	uintptr_t symoff = 0;
+	uintptr_t symoff;
 	char *symname;
-	size_t symsize = 0;
+	size_t symsize;
 
 	symname = addr_to_sym(addr, &symoff, &symsize);
 
-	// if the symbol could not be found, display the address
-	if (symname == NULL)
-		(void) sprintf(buf, "0x%llx", (unsigned long long)addr);
-	else if (show_size && symoff == 0 && symname != NULL)
+	if (show_size && symoff == 0)
 		(void) sprintf(buf, "%s[%ld]", symname, (long)symsize);
-	else if (symoff == 0 && symname != NULL)
+	else if (symoff == 0)
 		(void) sprintf(buf, "%s", symname);
 	else if (symoff < 16 && bcmp(symname, "master_cpu", 10) == 0)	/* CPU */
 		(void) sprintf(buf, "cpu[%d]", (int) symoff);

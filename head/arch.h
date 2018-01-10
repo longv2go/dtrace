@@ -29,7 +29,7 @@
 #define ARM64_STRING		"arm64"
 #define ANY_CPU_STRING		"any"
 
-static inline const char*
+static inline char*
 string_for_arch(cpu_type_t arch)
 {
 	switch(arch) {
@@ -59,8 +59,10 @@ arch_for_string(const char* string)
 		return CPU_TYPE_X86_64;
 	else if(!strcmp(string, ARM_STRING))
 		return CPU_TYPE_ARM;
+#if defined(CPU_TYPE_ARM64) && !defined(RC_HIDE_64)
 	else if(!strcmp(string, ARM64_STRING))
 		return CPU_TYPE_ARM64;
+#endif
 	else if(!strcmp(string, ANY_CPU_STRING))
 		return CPU_TYPE_ANY;
 	else

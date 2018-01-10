@@ -33,7 +33,6 @@
  * SECTION: Output Formatting/printf()
  *
  */
-#pragma D option nolibs
 
 BEGIN
 {

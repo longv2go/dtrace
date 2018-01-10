@@ -44,14 +44,14 @@ BEGIN
 	start = timestamp;
 }
 
-tick-10ms
+tick-100ms
 /i < 20/
 {
 	@func[i % 5] = sum(i * 100);
 	i++;
 }
 
-tick-10ms
+tick-100ms
 /i == 20/
 {
 	printf("normalized data:\n");

@@ -74,8 +74,8 @@
  * A simple notification mechanism is provided for libdtrace clients using
  * dtrace_handle_proc() for notification of PS_UNDEAD or PS_LOST events.  If
  * such an event occurs, the dt_proc_t itself is enqueued on a notification
- * list and the control thread signals the waiting thread. dtrace_sleep() will
- * wake up and will then call the client handler as necessary.
+ * list and the control thread broadcasts to dph_cv.  dtrace_sleep() will wake
+ * up using this condition and will then call the client handler as necessary.
  */
 
 #include <sys/time.h>
@@ -92,7 +92,6 @@
 
 extern void dt_proc_rdwatch(dt_proc_t *, rd_event_e, const char *);
 extern void *dt_proc_control(void *arg);
-extern void dt_proc_signal(dtrace_hdl_t *dtp);
 
 void Pcheckpoint_syms(struct ps_prochandle *P);
 
@@ -178,7 +177,7 @@ dt_proc_notify(dtrace_hdl_t *dtp, dt_proc_hash_t *dph, dt_proc_t *dpr,
 		dprn->dprn_next = dph->dph_notify;
 		dph->dph_notify = dprn;
 
-		dt_proc_signal(dtp);
+		(void) pthread_cond_broadcast(&dph->dph_cv);
 		(void) pthread_mutex_unlock(&dph->dph_lock);
 	}
 }
@@ -246,14 +245,7 @@ dt_proc_rdevent(dtrace_hdl_t *dtp, dt_proc_t *dpr, const char *evname)
 		if (dt_pid_create_probes_module(dtp, dpr) != 0)
 			dt_proc_notify(dtp, dtp->dt_procs, dpr,
 			    dpr->dpr_errmsg);
-		/*
-		 * Take note of the symbol owners (modules) that
-		 * have already been processed.
-		 * We know we can do this at that point because the controlled
-		 * process is blocked, so no new symbol can be loaded at this
-		 * point.
-		 */
-		Pcheckpoint_syms(dpr->dpr_proc);
+
 		break;
 	case RD_PREINIT:
 		Pupdate_syms(dpr->dpr_proc);
@@ -265,6 +257,9 @@ dt_proc_rdevent(dtrace_hdl_t *dtp, dt_proc_t *dpr, const char *evname)
 		break;
 	}
 	
+	// Take note of symbol owners (i.e. modules) already processed. */
+	if (!(dpr->dpr_stop & ~DT_PROC_STOP_IDLE))
+		Pcheckpoint_syms(dpr->dpr_proc);
 }
 
 void
@@ -683,6 +678,7 @@ dt_proc_hash_create(dtrace_hdl_t *dtp)
 	    sizeof (dt_proc_t *) * _dtrace_pidbuckets - 1)) != NULL) {
 
 		(void) pthread_mutex_init(&dtp->dt_procs->dph_lock, NULL);
+		(void) pthread_cond_init(&dtp->dt_procs->dph_cv, NULL);
 
 		dtp->dt_procs->dph_hashlen = _dtrace_pidbuckets;
 		dtp->dt_procs->dph_lrulim = _dtrace_pidlrulim;
@@ -726,7 +722,6 @@ dtrace_proc_grab(dtrace_hdl_t *dtp, pid_t pid, int flags)
 	return (P);
 }
 
-int pid_resume(int pid);
 struct ps_prochandle *
 dtrace_proc_waitfor(dtrace_hdl_t *dtp, char const *pname)
 {

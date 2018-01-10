@@ -140,7 +140,7 @@ symtab_init(void)
 {
 	CSRange table_range;
 
-	uint32_t symflags = 0x0;
+	enum CSSymbolicatorPrivateFlags symflags = 0x0;
 	symflags |= kCSSymbolicatorDefaultCreateFlags;
 	symflags |= kCSSymbolicatorUseSlidKernelAddresses;
 

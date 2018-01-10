@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -57,8 +57,6 @@ status=$?
 
 if [ "$status" -ne 0 ]; then
 	echo $tst: dtrace failed
-else
-	echo dtrace succeeded
 fi
 
 exit $status

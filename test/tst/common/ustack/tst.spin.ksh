@@ -25,7 +25,7 @@
 #
 #ident	"@(#)tst.spin.ksh	1.1	06/08/28 SMI"
 
-file=/tmp/out.$$
+file=out.$$
 dtrace=/usr/sbin/dtrace
 
 rm -f $file
@@ -62,7 +62,7 @@ $dtrace -o $file -c $dir/tst.spin.exe -s /dev/stdin <<EOF
 	}
 
 	tick-1s
-	/secs > 2/
+	/secs > 5/
 	{
 		done = 1;
 	}

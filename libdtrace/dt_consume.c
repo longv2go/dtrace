@@ -3033,12 +3033,9 @@ dtrace_consume(dtrace_hdl_t *dtp, FILE *fp,
 		uint_t cookie = 0;
 		dtrace_bufdesc_t *buf;
 
-		dtrace_probedata_t data[max_ncpus];
-		bzero(data, sizeof(data));
-		for (int i = 0; i < max_ncpus; i++) {
-			data[i].dtpda_cpu = i;
-			data[i].dtpda_handle = dtp;
-		}
+        dtrace_probedata_t data[max_ncpus];
+        bzero(data, sizeof(data));
+
 		bzero(drops, max_ncpus * sizeof (uint64_t));
 
 		/* Initialize the priority queue if it's not already there.  we need

@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -46,10 +46,10 @@ dtrace=/usr/sbin/dtrace
 #
 # That accidentally matched an existing Apple probe
 #
-# We have changed it to $dtrace -n BeGiN
+# We have changed it to $dtrace -n Begin
 #
 ##
-$dtrace -n 'BeGiN'
+$dtrace -n Begin
 
 status=$?
 

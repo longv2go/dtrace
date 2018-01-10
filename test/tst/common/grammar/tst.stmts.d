@@ -26,8 +26,6 @@
 
 #pragma ident	"@(#)tst.stmts.d	1.1	06/08/28 SMI"
 
-#pragma D option statusrate=15msec
-
 /*
  * ASSERTION: Test the various kinds of D probe description statement
  *   rules in the grammar.
@@ -42,7 +40,7 @@ BEGIN
 	i = 0;
 }
 
-tick-10ms
+tick-1
 /i != 20/
 {
 	i++;
@@ -54,7 +52,7 @@ tick-10ms
 	@d[x] = max(x);
 }
 
-tick-10ms
+tick-1
 /i = 20/
 {
 	exit(0);

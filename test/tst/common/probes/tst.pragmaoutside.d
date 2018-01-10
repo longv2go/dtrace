@@ -35,9 +35,9 @@
  *
  */
 
-#pragma D option statusrate=10ms
 
-tick-1ms
+
+tick-10ms
 {
 	exit(0);
 }

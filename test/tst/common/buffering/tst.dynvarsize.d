@@ -39,17 +39,16 @@
 
 #pragma D option dynvarsize=100
 #pragma D option quiet
-#pragma D option statusrate=150ms
 
 int n;
 
-tick-1ms
+tick-10ms
 /n++ < 100/
 {
 	a[n] = 1;
 }
 
-tick-1ms
+tick-10ms
 /n == 100/
 {
 	exit(2);

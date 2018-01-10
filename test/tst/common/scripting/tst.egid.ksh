@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -69,22 +69,22 @@ EOF
 
 chmod 555 $dfilename >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-	echo "chmod $dfilename failed"
+	print -u2 "chmod $dfilename failed"
 	exit 1
 fi
 
 #Get the groupid of the calling process using ps
 
-groupid=`ps -Ao pid,gid | grep "$$ " | awk '{print $2}' 2>/dev/null`
+groupid=`ps -o pid,gid | grep "$$ " | awk '{print $2}' 2>/dev/null`
 if [ $? -ne 0 ]; then
-	echo "unable to get uid of the current process with pid = $$"
+	print -u2 "unable to get uid of the current process with pid = $$"
 	exit 1
 fi
 
 #Pass groupid as argument to .d file
 $dfilename $groupid >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-	echo "Error in executing $dfilename"
+	print -u2 "Error in executing $dfilename"
 	exit 1
 fi
 

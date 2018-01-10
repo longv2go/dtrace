@@ -44,6 +44,7 @@ BEGIN
 
 	printf("\n");
 
+	printf("%%a = %a\n", &`max_ncpus);
 	printf("%%c = %c\n", i);
 	printf("%%d = %d\n", i);
 	printf("%%hd = %hd\n", (short)i);

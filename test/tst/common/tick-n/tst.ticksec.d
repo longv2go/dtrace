@@ -37,14 +37,12 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
-#pragma D option nolibs
 
-tick-10msec
+tick-1sec
 {
 	printf("This test is a simple tick-sec provider test\n");
 }
-tick-10msec
+tick-1sec
 {
 	printf("This test is a simple tick-sec provider test");
 	exit(0);

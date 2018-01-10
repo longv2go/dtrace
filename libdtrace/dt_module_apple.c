@@ -21,8 +21,6 @@
 #include <dt_impl.h>
 #include <assert.h>
 
-extern int _dtrace_argmax; /* maximum probe arguments */
-
 /*
  * Check if the fbt providers is supposed to provide probes for the private
  * symbols (aka private probes).
@@ -44,86 +42,6 @@ int dtrace_private_probes_requested(void) {
 
 	return value;
 }
-
-void
-dt_module_get_types(dtrace_hdl_t *dtp, const dtrace_probedesc_t *pdp,
-	dtrace_argdesc_t *adp, int *nargs)
-{
-	dt_module_t *dmp;
-	GElf_Sym sym;
-	ctf_funcinfo_t f;
-	uint_t id;
-	ctf_id_t argv[_dtrace_argmax];
-	int argc = sizeof (argv) / sizeof (argv[0]);
-	int args = *nargs, i;
-
-	assert(args <= _dtrace_argmax);
-
-	dmp = dt_module_lookup_by_name(dtp, pdp->dtpd_mod);
-
-	/*
-	 * Not finding the module is not an error, we'll just carry on
-	 * without the argument types
-	 */
-	if (dmp == NULL)
-		goto out;
-
-	if (dmp->dm_ops->do_symname(dmp, pdp->dtpd_func, &sym, &id) == NULL) {
-		goto out;
-	}
-	if (ctf_func_info(dmp->dm_ctfp, id, &f) == CTF_ERR) {
-		dt_dprintf("failed to retrieve func info (ctf_errno: %d)\n", ctf_errno(dmp->dm_ctfp));
-		goto out;
-	}
-
-	if (strcmp(pdp->dtpd_name, "return") == 0) {
-		if (args < 2)
-			goto out;
-		/*
-		 * args[0] on fbt return probes is always the offset of the
-		 * returning instruction in the function text
-		 */
-		bzero(adp, sizeof (dtrace_argdesc_t));
-		adp->dtargd_ndx = 0;
-		adp->dtargd_id = pdp->dtpd_id;
-		adp->dtargd_mapping = adp->dtargd_ndx;
-		strncpy(adp->dtargd_native, "int", DTRACE_ARGTYPELEN);
-		adp++;
-
-		/*
-		 * args[1] contains the return value
-		 */
-		bzero(adp, sizeof (dtrace_argdesc_t));
-		adp->dtargd_ndx = 1;
-		adp->dtargd_id = pdp->dtpd_id;
-		adp->dtargd_mapping = adp->dtargd_ndx;
-		ctf_type_name(dmp->dm_ctfp, f.ctc_return, adp->dtargd_native, DTRACE_ARGTYPELEN);
-		*nargs = 2;
-	}
-	else {
-		if (ctf_func_args(dmp->dm_ctfp, id, argc, argv) == CTF_ERR) {
-			dt_dprintf("failed to retrieve func args (ctf_errno: %d)\n", ctf_errno(dmp->dm_ctfp));
-			goto out;
-		}
-		args = MIN(args, f.ctc_argc);
-		for (i = 0; i < args; adp++, i++) {
-			bzero(adp, sizeof (dtrace_argdesc_t));
-			adp->dtargd_ndx = i;
-			adp->dtargd_id = pdp->dtpd_id;
-			adp->dtargd_mapping = adp->dtargd_ndx;
-			ctf_type_name(dmp->dm_ctfp, argv[i], adp->dtargd_native, DTRACE_ARGTYPELEN);
-		}
-		*nargs = args;
-	}
-	return;
-out:
-	/*
-	 * We need to indicate that we have no typed arguments if we could not
-	 * find the module or an error happened
-	 */
-	*nargs = 0;
-}
-
 
 /*
  * Create a symbolicator by using CoreSymbolication.
@@ -152,8 +70,6 @@ CSSymbolicatorRef dtrace_kernel_symbolicator(bool with_slide) {
 			if (with_slide)
 				flags |= kCSSymbolicatorUseSlidKernelAddresses;
 
-			if (_dtrace_disallow_dsym)
-				flags |= kCSSymbolicatorDisallowDsymData ;
 			CSSymbolicatorRef temp = CSSymbolicatorCreateWithMachKernelFlagsAndNotification(flags, NULL);
 
 			OSMemoryBarrier();
@@ -182,21 +98,16 @@ static void filter_module_symbols(CSSymbolOwnerRef owner, int provide_private_pr
 {
 	// See note at callsites, we want to always use __TEXT __text for now.
 	if (TRUE || (CSSymbolOwnerIsObject(owner) && !(CSSymbolOwnerGetDataFlags(owner) & kCSSymbolOwnerDataFoundDsym))) {				
-		void (^check_sym)(CSSymbolRef) = ^(CSSymbolRef symbol) {
+		// Find the TEXT text region
+		CSRegionRef text_region = CSSymbolOwnerGetRegionWithName(owner, "__TEXT __text");
+		CSRegionForeachSymbol(text_region, ^(CSSymbolRef symbol) {
 			// By default, the kernel team has requested minimal symbol info.
 			if ((CSSymbolIsUnnamed(symbol) == false) && (provide_private_probes || CSSymbolIsExternal(symbol))) {
 				if (CSSymbolGetRange(symbol).length > 0) {
 					valid_symbol(symbol);
 				}
 			}
-		};
-
-		// Find the TEXT/TEXT_EXEC text regions
-		CSRegionRef text_region = CSSymbolOwnerGetRegionWithName(owner, "__TEXT __text");
-		CSRegionRef text_exec_region = CSSymbolOwnerGetRegionWithName(owner, "__TEXT_EXEC __text");
-		CSRegionForeachSymbol(text_region, check_sym);
-		CSRegionForeachSymbol(text_exec_region, check_sym);
-
+		});
 	} else {
 		CSSymbolOwnerForeachSymbol(owner, ^(CSSymbolRef symbol) {
 			if (CSSymbolIsFunction(symbol) && (CSSymbolGetRange(symbol).length > 0)) {

@@ -38,15 +38,13 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
-#pragma D option nolibs
 
 BEGIN
 {
 	i = 0;
 }
 
-profile:::tick-10msec
+profile:::tick-1sec
 {
 	i++;
 	trace(i);

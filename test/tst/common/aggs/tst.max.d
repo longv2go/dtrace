@@ -37,21 +37,20 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
 
 BEGIN
 {
 	i = 0;
 }
 
-tick-1ms
+tick-10ms
 /i < 1000/
 {
 	@a = max(i);
 	i += 100;
 }
 
-tick-1ms
+tick-10ms
 /i == 1000/
 {
 	printa(@a);

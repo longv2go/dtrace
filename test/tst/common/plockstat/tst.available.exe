@@ -1,5 +1,5 @@
-#!/bin/sh
-##!/usr/bin/sh
+#!/bin/ksh
+##!/usr/bin/ksh
 #
 # CDDL HEADER START
 #
@@ -27,4 +27,4 @@
 #
 #ident	"@(#)tst.available.exe	1.1	06/08/28 SMI"
 
-exec sleep 100000000
+sleep 100000000

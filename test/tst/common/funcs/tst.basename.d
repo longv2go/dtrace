@@ -27,7 +27,6 @@
 #pragma ident	"@(#)tst.basename.d	1.1	06/08/28 SMI"
 
 #pragma D option quiet
-#pragma D option statusrate=10ms
 
 /*
  * This test verifies that the basename() and dirname() functions are working
@@ -58,7 +57,7 @@ BEGIN
 	end = i;
 	i = 0;
 
-	printf("#!/bin/sh\n\n");
+	printf("#!/bin/ksh\n\n");
 }
 
 /* Avoid race to collect buffers on SMP. */

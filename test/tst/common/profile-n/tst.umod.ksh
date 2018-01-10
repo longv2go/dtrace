@@ -27,7 +27,7 @@
 
 script()
 {
-	$dtrace -xnolibs -qs /dev/stdin <<EOF
+	$dtrace -qs /dev/stdin <<EOF
 	profile-1234hz
 	/arg1 != 0/
 	{
@@ -59,9 +59,9 @@ child=$!
 #
 if [ -f /usr/lib/dtrace/darwin.d ] ; then
 #script | tee /dev/fd/2 | grep '0x9000' > /dev/null
-script | tee /dev/fd/2 | grep -w sh > /dev/null
+script | tee /dev/fd/2 | grep -w ksh > /dev/null
 else
-script | tee /dev/fd/2 | grep -w sh > /dev/null
+script | tee /dev/fd/2 | grep -w ksh > /dev/null
 fi
 status=$? 
 

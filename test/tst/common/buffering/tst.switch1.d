@@ -43,26 +43,26 @@
  */
 #pragma D option bufpolicy=switch
 #pragma D option bufsize=32
-#pragma D option switchrate=200msec
+#pragma D option switchrate=500msec
 #pragma D option quiet
 
 int n;
 int i;
 
-tick-400msec
+tick-1sec
 /n < 10/
 {
 	printf("%d\n", i);
 	i++;
 }
 
-tick-400msec
+tick-1sec
 /n < 10/
 {
 	n++;
 }
 
-tick-400msec
+tick-1sec
 /n == 10/
 {
 	exit(0);

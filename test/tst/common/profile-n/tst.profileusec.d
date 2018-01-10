@@ -37,8 +37,6 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=1ms
-#pragma D option nolibs
 
 tick-200usec
 {

@@ -36,20 +36,19 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=50ms
 
 BEGIN
 {
 	a["test"] = 0;
 }
 
-tick-10ms
+tick-1
 /a["test"] == 0/
 {
 	exit(0);
 }
 
-tick-10ms
+tick-1
 /a["test"] != 0/
 {
 	printf("Expected 0, got %d\n", a["test"]);

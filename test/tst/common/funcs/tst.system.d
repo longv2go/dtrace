@@ -35,8 +35,11 @@ BEGIN
 	this->b = -2;
 
 	system("echo %s %d %d", "foo", this->a, this->b);
+	system("ping -o localhost > /dev/null && echo localhost is alive");
 	system("echo %d", ++this->a);
+	system("ping -o localhost > /dev/null && echo localhost is alive");
 	system("echo %d", ++this->a);
+	system("ping -o localhost > /dev/null && echo localhost is alive");
 	system("echo %d", ++this->a);
 	exit(0);
 }

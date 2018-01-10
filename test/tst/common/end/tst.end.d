@@ -36,8 +36,6 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
-#pragma D option nolibs
 
 END
 {
@@ -49,7 +47,7 @@ BEGIN
 	printf("Begin fired first\n");
 }
 
-tick-10ms
+tick-1
 {
 	printf("tick fired second\n");
 	printf("Call exit\n");

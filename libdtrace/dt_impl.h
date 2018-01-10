@@ -20,7 +20,7 @@
  */
 
 /*
- * Portions copyright (c) 2012, 2016 by Delphix. All rights reserved.
+ * Portions copyright (c) 2012 by Delphix. All rights reserved.
  */
 
 /*
@@ -355,7 +355,6 @@ struct dtrace_hdl {
 	cpu_type_t dt_arch;	/* CPU architecture to generate objects for */
 	dt_strtab_t *dt_apple_ids; /* IDs generated during apple_define actions */
 	uint64_t dt_last_timestamp;	/* most recently consumed timestamp */
-	boolean_t dt_has_sugar; /* syntactic sugar used? */
 };
 
 /*
@@ -573,11 +572,8 @@ enum {
 	EDT_BADAGGVAR,		/* invalid aggregation variable identifier */
 	EDT_ENABLING_ERR,	/* failed to enable probe */
 	EDT_OVERSION,		/* client is requesting deprecated version */
-	EDT_BADPID,		/* invalid pid in pid or objc probe */
-	EDT_NOSYMBOLICATOR,	 /* no kernel symbols found */
-	EDT_PROBE_RESTRICTED,	/* probe not found because system is restricted */
-	EDT_BOOTARGS,		/* failed to retrieve boot-args */
-	EDT_OPTUNSUPPORTED,	/* option value not supported on current OS */
+    EDT_BADPID,			/* invalid pid in pid or objc probe */
+    EDT_NOSYMBOLICATOR,	        /* no kernel symbols found */
 };
 
 /*
@@ -650,8 +646,6 @@ extern void dt_buffered_destroy(dtrace_hdl_t *);
 extern int dt_rw_read_held(pthread_rwlock_t *);
 extern int dt_rw_write_held(pthread_rwlock_t *);
 extern int dt_mutex_held(pthread_mutex_t *);
-
-extern dt_ident_t* dt_macro_lookup(dt_idhash_t*, const char *);
 
 extern uint64_t dt_stddev(uint64_t *, uint64_t);
 
@@ -734,8 +728,6 @@ extern uint_t _dtrace_stkindent;	/* default indent for stack/ustack */
 extern uint_t _dtrace_pidbuckets;	/* number of hash buckets for pids */
 extern uint_t _dtrace_pidlrulim;	/* number of proc handles to cache */
 extern int _dtrace_debug;		/* debugging messages enabled */
-extern int _dtrace_disallow_dsym;	/* dsym symbols disabled */
-extern int _dtrace_error;		/* error messages enabled */
 extern int _dtrace_mangled;		/* enabled mangled names for C++ fns */
 extern size_t _dtrace_bufsize;		/* default dt_buf_create() size */
 extern int _dtrace_argmax;		/* default maximum probe arguments */

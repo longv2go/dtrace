@@ -155,7 +155,8 @@ fi
   * Print exec event
   */
  /* SOLARIS: syscall::exec:return, syscall::exece:return */
-proc:::exec-success
+ syscall::execve:return,
+ syscall::posix_spawn:return
  /(FILTER == 0) || (OPT_cmd == 1 && COMMAND == strstr(COMMAND, execname)) || (OPT_cmd == 1 && execname == strstr(execname, COMMAND))/ 
  {
 	/* print optional fields */

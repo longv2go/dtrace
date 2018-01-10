@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/ksh
+##!/usr/bin/ksh
 #
 # iopattern - print disk I/O pattern.
 #             Written using DTrace (Solaris 10 3/05).

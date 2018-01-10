@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -67,17 +67,17 @@ chmod 555 $dfilename
 
 output=`$dfilename 1 2 3 4 5 6 7 8 9 10 2>/dev/null`
 if [ $? -ne 0 ]; then
-	echo "Error in executing $dfilename"
+	print -u2 "Error in executing $dfilename"
 	exit 1
 fi
 
-outarray=($output)
+set -A outarray $output
 
 if [[ ${outarray[0]} != 1 || ${outarray[1]} != 2 || ${outarray[2]} != 3 || \
 	${outarray[3]} != 4 || ${outarray[4]} != 5 || ${outarray[5]} != 6 || \
 	${outarray[6]} != 7 || ${outarray[7]} != 8 || ${outarray[8]} != 9 || \
 	${outarray[9]} != 10 ]]; then
-	echo "Error in output by $dfilename"
+	print -u2 "Error in output by $dfilename"
 	exit 1
 fi
 

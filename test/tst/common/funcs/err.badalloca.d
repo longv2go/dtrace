@@ -37,16 +37,16 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
+
 
 BEGIN
 {
 	ptr = alloca(sizeof (int));
 }
 
-tick-10ms
+tick-1
 {
-	bcopy((void *)&`real_ncpus, ptr, sizeof (int));
+	bcopy((void *)&`max_ncpus, ptr, sizeof (int));
 }
 
 ERROR

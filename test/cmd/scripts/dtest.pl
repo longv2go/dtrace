@@ -30,31 +30,36 @@
 require 5.6.1;
 
 use File::Find;
-use File::Copy;
 use File::Basename;
 use Getopt::Std;
 use Cwd;
-use Time::HiRes qw(time);
 
 $PNAME = $0;
 $PNAME =~ s:.*/::;
-$USAGE = "Usage: $PNAME [-hlqsx] [-d dir] [-f file]"
+$USAGE = "Usage: $PNAME [-abghlqsu] [-d dir] [-i isa] "
     . "[-x opt[=arg]] [file | dir ...]\n";
 ($MACH = `uname -p`) =~ s/\W*\n//;
 
 $dtrace_path = '/usr/sbin/dtrace';
 @dtrace_argv = ();
 
-$DEFAULT_TEST_LIST = $MACH eq 'arm' ? 'common/NoSafetyTests.arm' : 'common/NoSafetyTests';
-
 ## $ksh_path = '/usr/bin/ksh';
-$ksh_path = '/bin/sh';
+$ksh_path = '/bin/ksh';
 
 @files = ();
 $errs = 0;
 $bypassed = 0;
 
-my $ts = time;
+#
+# If no test files are specified on the command-line, execute a find on "."
+# and append any tst.*.d, tst.*.ksh, err.*.d or drp.*.d files found within
+# the directory tree.
+#
+sub wanted
+{
+	push(@files, $File::Find::name)
+	    if ($_ =~ /^(tst|err|drp)\..+\.(d|ksh)$/ && -f "$_");
+}
 
 sub dirname {
 	my($s) = @_;
@@ -67,9 +72,12 @@ sub dirname {
 sub usage
 {
 	print $USAGE;
+	print "\t -a  execute test suite using anonymous enablings\n";
+	print "\t -b  execute bad ioctl test program\n";
 	print "\t -d  specify directory for test results files and cores\n";
-	print "\t -f  specify test list file\n";
+	print "\t -g  enable libumem debugging when running tests\n";
 	print "\t -h  display verbose usage message\n";
+	print "\t -i  specify ISA to test instead of isaexec(3C) default\n";
 	print "\t -l  save log file of results and PIDs used by tests\n";
 	print "\t -q  set quiet mode (only report errors and summary)\n";
 	print "\t -s  save results files even for tests that pass\n";
@@ -81,7 +89,7 @@ sub errmsg
 {
 	my($msg) = @_;
 
-	print STDOUT $msg;
+	print STDERR $msg;
 	print LOG $msg if ($opt_l);
 	$errs++;
 }
@@ -99,12 +107,12 @@ sub fail
 	}
 
 	unless (mkdir "$opt_d/failure.$n") {
-		warn "[FAIL] failed to make directory $opt_d/failure.$n: $!";
+		warn "ERROR: failed to make directory $opt_d/failure.$n: $!\n";
 		exit(125);
 	}
 
 	open(README, ">$opt_d/failure.$n/README");
-	print README "[FAIL] " . $file . " " . $msg;
+	print README "ERROR: " . $file . " " . $msg;
 	
 	if (scalar @parms > 1) {
 		print README "; see $errfile\n";
@@ -120,27 +128,28 @@ sub fail
 
 	if (-f "$opt_d/$pid.out") {
 		rename("$opt_d/$pid.out", "$opt_d/failure.$n/$pid.out");
-		copy("$file.out", "$opt_d/failure.$n/$dest.out");
+		link("$file.out", "$opt_d/failure.$n/$dest.out");
 	}
 
 	if (-f "$opt_d/$pid.err") {
 		rename("$opt_d/$pid.err", "$opt_d/failure.$n/$pid.err");
-		copy("$file.err", "$opt_d/failure.$n/$dest.err");
+		link("$file.err", "$opt_d/failure.$n/$dest.err");
 	}
 
 	if (-f "$opt_d/$pid.core") {
 		rename("$opt_d/$pid.core", "$opt_d/failure.$n/$pid.core");
 	}
 
-	copy("$file", "$opt_d/failure.$n/$dest");
+	link("$file", "$opt_d/failure.$n/$dest");
 
+	$msg = "ERROR: " . $dest . " " . $msg;
 
 	if (scalar @parms > 1) {
-		$msg = $msg . "; see $errfile in failure.$n";
+		$msg = $msg . "; see $errfile in failure.$n\n";
 	} else {
-		$msg = $msg . "; details in failure.$n";
+		$msg = $msg . "; details in failure.$n\n";
 	}
-	$msg = $msg . "\n[FAIL] " . $file . "\n";
+
 	errmsg($msg);
 }
 
@@ -152,23 +161,8 @@ sub logmsg
 	print LOG $msg if ($opt_l);
 }
 
-sub readtestlist
-{
-	my ($file) = @_;
-	open(my $fd, '<', $file) or die "Could not open $file";
-	while (my $test = <$fd>) {
-		if (not($test =~ /^#/) and length $test > 1) {
-			chomp($test);
-			push(@files, $test);
-		}
-	}
-	chdir dirname($file) or die "Could not change directory";
-}
-
-die $USAGE unless (getopts('d:f:hi:lqsux:'));
+die $USAGE unless (getopts('abd:ghi:lqsux:'));
 usage() if ($opt_h);
-
-readtestlist($opt_f) if ($opt_f);
 
 foreach $arg (@ARGV) {
 	if (-f $arg) {
@@ -180,19 +174,30 @@ foreach $arg (@ARGV) {
 	}
 }
 
+## $defdir = -d '/opt/SUNWdtrt/tst' ? '/opt/SUNWdtrt/tst' : '.';
+## $bindir = -d '/opt/SUNWdtrt/bin' ? '/opt/SUNWdtrt/bin' : '.';
 $defdir = '.';
 $bindir = '.';
 
-readtestlist($DEFAULT_TEST_LIST) if (scalar(@files) == 0);
+find(\&wanted, "$defdir/common") if (scalar(@ARGV) == 0);
+find(\&wanted, "$defdir/$MACH") if (scalar(@ARGV) == 0);
 die $USAGE if (scalar(@files) == 0);
 
-if (!$opt_d) {
-	$opt_d = "/tmp/dtest.$$";
+if ($opt_d) {
+	die "$PNAME: -d arg must be absolute path\n" unless ($opt_d =~ /^\//);
+	die "$PNAME: -d arg $opt_d is not a directory\n" unless (-d "$opt_d");
+##	system("coreadm -p $opt_d/%p.core");
+} else {
+	my $dir = getcwd;
+##	system("coreadm -p $dir/%p.core");
+	$opt_d = '.';
 }
 
-die "$PNAME: -d arg must be absolute path\n" unless ($opt_d =~ /^\//);
-mkdir $opt_d unless (-e "$opt_d");
-die "$PNAME: -d arg $opt_d is not a directory\n" unless (-d "$opt_d");
+if ($opt_i) {
+	$dtrace_path = "/usr/sbin/$opt_i/dtrace";
+	die "$PNAME: dtrace(1M) for ISA $opt_i not found\n"
+	    unless (-x "$dtrace_path");
+}
 
 if ($opt_x) {
 	push(@dtrace_argv, '-x');
@@ -202,15 +207,127 @@ if ($opt_x) {
 die "$PNAME: failed to open $PNAME.$$.log: $!\n"
     unless (!$opt_l || open(LOG, ">$PNAME.$$.log"));
 
+## if ($opt_g) {
+## 	$ENV{'UMEM_DEBUG'} = 'default,verbose';
+## 	$ENV{'UMEM_LOGGING'} = 'fail,contents';
+## 	$ENV{'LD_PRELOAD'} = 'libumem.so';
+## }
+
 #
 # Ensure that $PATH contains a cc(1) so that we can execute the
 # test programs that require compilation of C code.
 #
+## $ENV{'PATH'} = $ENV{'PATH'} . ':/ws/on10-tools/SUNWspro/SOS8/bin';
 $ENV{'PATH'} = $ENV{'PATH'} . ':/usr/bin';
-$ENV{'TZ'} = 'America/Los_Angeles';
 
-logmsg "[TEST] dtrace\n";
-logmsg "Results in $opt_d\n";
+if ($opt_b) {
+	logmsg("badioctl'ing ... ");
+
+	if (($badioctl = fork()) == -1) {
+		errmsg("ERROR: failed to fork to run badioctl: $!\n");
+		next;
+	}
+
+	if ($badioctl == 0) {
+		open(STDIN, '</dev/null');
+		exit(125) unless open(STDOUT, ">$opt_d/$$.out");
+		exit(125) unless open(STDERR, ">$opt_d/$$.err");
+
+		exec($bindir . "/badioctl");
+		warn "ERROR: failed to exec badioctl: $!\n";
+		exit(127);
+	}
+
+
+	logmsg("[$badioctl]\n");
+
+	#
+	# If we're going to be bad, we're just going to iterate over each
+	# test file.
+	#
+	foreach $file (sort @files) {
+		($name = $file) =~ s:.*/::;
+		$dir = dirname($file);
+
+		if (!($name =~ /^tst\./ && $name =~ /\.d$/)) {
+			next;
+		}
+
+		logmsg("baddof'ing $file ... ");
+
+		if (($pid = fork()) == -1) {
+			errmsg("ERROR: failed to fork to run baddof: $!\n");
+			next;
+		}
+
+		if ($pid == 0) {
+			open(STDIN, '</dev/null');
+			exit(125) unless open(STDOUT, ">$opt_d/$$.out");
+			exit(125) unless open(STDERR, ">$opt_d/$$.err");
+
+			unless (chdir($dir)) {
+				warn "ERROR: failed to chdir for $file: $!\n";
+				exit(126);
+			}
+
+			exec($bindir . "/baddof", $name);
+
+			warn "ERROR: failed to exec for $file: $!\n";
+			exit(127);
+		}
+
+		sleep 60;
+		kill(9, $pid);
+		waitpid($pid, 0);
+
+		logmsg("[$pid]\n");
+
+		unless ($opt_s) {
+			unlink($pid . '.out');
+			unlink($pid . '.err');
+		}
+	}
+
+	kill(9, $badioctl);
+	waitpid($badioctl, 0);
+
+	unless ($opt_s) {
+		unlink($badioctl . '.out');
+		unlink($badioctl . '.err');
+	}
+
+	exit(0);
+}
+
+if ($opt_u) {
+	logmsg "spawning module unloading process... ";
+
+	$unloader = fork;
+
+	if ($unloader != 0 && !defined $unloader) {
+		#
+		# Couldn't fork for some reason.
+		#
+		die "couldn't fork: $!\n";
+	}
+
+	if ($unloader == 0) {
+		#
+		# We're in the child.  Go modunload krazy.
+		#
+		for (;;) {
+			system("modunload -i 0");
+		}
+	} else {
+		logmsg "[$unloader]\n";
+
+		$SIG{INT} = sub {
+			kill 9, $unloader;
+			exit($errs != 0);
+		};
+	}
+}
+
 #
 # Iterate over the set of test files specified on the command-line or located
 # by a find on "." and execute each one.  If the test file is executable, we
@@ -223,7 +340,7 @@ logmsg "Results in $opt_d\n";
 # examine stderr to ensure that a matching drop tag was produced.
 # If any *.out or *.err files are found we perform output comparisons.
 #
-foreach $file (@files) {
+foreach $file (sort @files) {
 	$file =~ m:.*/((.*)\.(\w+)):;
 	$name = $1;
 	$base = $2;
@@ -231,22 +348,12 @@ foreach $file (@files) {
 	
 	$dir = dirname($file);
 	$isksh = 0;
-	$isbinary = 0;
 	$tag = 0;
 	$droptag = 0;
-	$perftest = 0;
-
-	logmsg("[BEGIN] $file\n");
-	my $ts_before = time;
 
 	if ($name =~ /^tst\./) {
 		$isksh = ($ext eq 'ksh');
 		$status = 0;
-	} elsif ($name =~ /^perf\./) {
-		$isksh = ($ext eq 'ksh');
-		$isbinary = ($ext eq 'exe');
-		$status = 0;
-		$perftest = 1;
 	} elsif ($name =~ /^err\.(D_[A-Z0-9_]+)\./) {
 		$status = 1;
 		$tag = $1;
@@ -256,7 +363,7 @@ foreach $file (@files) {
 		$status = 0;
 		$droptag = $1;
 	} else {
-		errmsg("[FAIL] $file is not a valid test file name\n");
+		errmsg("ERROR: $file is not a valid test file name\n");
 		next;
 	}
 
@@ -264,9 +371,15 @@ foreach $file (@files) {
 	$exe = "$dir/$base.exe";
 	$exe_pid = -1;
 
-	if (!($isksh || $isbinary) && -x $exe) {
+	if ($opt_a && ($status != 0 || $tag != 0 || $droptag != 0 ||
+	    -x $exe || $isksh || -x $fullname)) {
+		$bypassed++;
+		next;
+	}
+
+	if (!$isksh && -x $exe) {
 		if (($exe_pid = fork()) == -1) {
-			errmsg("[FAIL] failed to fork to run $exe: $!\n");
+			errmsg("ERROR: failed to fork to run $exe: $!\n");
 			next;
 		}
 
@@ -275,12 +388,14 @@ foreach $file (@files) {
 
 			exec($exe);
 
-			warn "[FAIL] failed to exec $exe: $!\n";
+			warn "ERROR: failed to exec $exe: $!\n";
 		}
 	}
 
+	logmsg("testing $file ... ");
+
 	if (($pid = fork()) == -1) {
-		errmsg("[FAIL] failed to fork to run test $file: $!\n");
+		errmsg("ERROR: failed to fork to run test $file: $!\n");
 		next;
 	}
 
@@ -290,24 +405,21 @@ foreach $file (@files) {
 		exit(125) unless open(STDERR, ">$opt_d/$$.err");
 
 		unless (chdir($dir)) {
-			warn "[FAIL] failed to chdir for $file: $!\n";
+			warn "ERROR: failed to chdir for $file: $!\n";
 			exit(126);
 		}
-		if ($perftest == 1) {
-			$ENV{'PERFDATA_FILE'} = "$opt_d/$$.perfdata";
-		}
+
 		push(@dtrace_argv, '-xerrtags') if ($tag);
 		push(@dtrace_argv, '-xdroptags') if ($droptag);
 ##		push(@dtrace_argv, $exe_pid) if ($exe_pid != -1);
 
-		if ($isbinary and -x $name) {
-			exec('./' . $name);
-		}
-		elsif ($isksh) {
+		if ($isksh) {
 			exit(123) unless open(STDIN, "<$name");
 			exec($ksh_path);
-		}
-		else {
+		} elsif (-x $name) {
+		        warn "ERROR: $name is executable\n";
+			exit(1);
+		} else {
 			if ($tag == 0 && $status == $0 && $opt_a) {
 				push(@dtrace_argv, '-A');
 			}
@@ -320,34 +432,112 @@ foreach $file (@files) {
 			exec($dtrace_path, @dtrace_argv);
 		}
 
-		warn "[FAIL] failed to exec for $file: $!\n";
+		warn "ERROR: failed to exec for $file: $!\n";
 		exit(127);
 	}
 
-	eval {
-		local $SIG{ALRM} = sub { die "alarm clock restart" };
-		alarm(240);
-		if (waitpid($pid, 0) == -1) {
-			alarm(0);
-			die "waitpid returned -1";
-		}
-		alarm(0);
-	};
+eval {
+local $SIG{ALRM} = sub { die "alarm clock restart" };
+alarm(30);
 
-	if ($@) {
-		my $timespent = time - $ts_before;
-		logmsg("PID: $pid - TIME: $timespent\n");
-		fail("timed out waiting for $file");
+	if (waitpid($pid, 0) == -1) {
+		alarm(0);
+		errmsg("ERROR: timed out waiting for $file\n");
 		kill(9, $exe_pid) if ($exe_pid != -1);
 		kill(9, $pid);
 		next;
-
 	}
+
+alarm(0);
+};
+
 	kill(9, $exe_pid) if ($exe_pid != -1);
 
-	my $timespent = time - $ts_before;
-	logmsg("PID: $pid - TIME: $timespent\n");
+	if ($tag == 0 && $status == $0 && $opt_a) {
+		#
+		# We can chuck the earler output.
+		#
+		unlink($pid . '.out');
+		unlink($pid . '.err');
 
+		#
+		# This is an anonymous enabling.  We need to get the module
+		# unloaded.
+		#
+		system("dtrace -ae 1> /dev/null 2> /dev/null");
+		system("svcadm disable -s svc:/network/nfs/mapid:default");
+		system("modunload -i 0 ; modunload -i 0 ; modunload -i 0");
+		if (!system("modinfo | grep dtrace")) {
+			warn "ERROR: couldn't unload dtrace\n";
+			system("svcadm enable " . 
+			    "-s svc:/network/nfs/mapid:default");
+			exit(124);
+		}
+
+		#
+		# DTrace is gone.  Now update_drv(1M), and rip everything out
+		# again.
+		#
+		system("update_drv dtrace");
+		system("dtrace -ae 1> /dev/null 2> /dev/null");
+		system("modunload -i 0 ; modunload -i 0 ; modunload -i 0");
+		if (!system("modinfo | grep dtrace")) {
+			warn "ERROR: couldn't unload dtrace\n";
+			system("svcadm enable " . 
+			    "-s svc:/network/nfs/mapid:default");
+			exit(124);
+		}
+
+		#
+		# Now bring DTrace back in.
+		#
+		system("sync ; sync");
+		system("dtrace -l -n bogusprobe 1> /dev/null 2> /dev/null");
+		system("svcadm enable -s svc:/network/nfs/mapid:default");
+
+		#
+		# That should have caused DTrace to reload with the new
+		# configuration file.  Now we can try to snag our anonymous
+		# state.
+		#
+		if (($pid = fork()) == -1) {
+			errmsg("ERROR: failed to fork to run test $file: $!\n");
+			next;
+		}
+
+		if ($pid == 0) {
+			open(STDIN, '</dev/null');
+			exit(125) unless open(STDOUT, ">$opt_d/$$.out");
+			exit(125) unless open(STDERR, ">$opt_d/$$.err");
+
+			push(@dtrace_argv, '-a');
+
+			unless (chdir($dir)) {
+				warn "ERROR: failed to chdir for $file: $!\n";
+				exit(126);
+			}
+
+			exec($dtrace_path, @dtrace_argv);
+			warn "ERROR: failed to exec for $file: $!\n";
+			exit(127);
+		}
+
+eval {
+local $SIG{ALRM} = sub { die "alarm clock restart" };
+alarm(30);
+
+		if (waitpid($pid, 0) == -1) {
+			errmsg("ERROR: timed out waiting for $file\n");
+			kill(9, $pid);
+			next;
+		}
+
+alarm(0);
+};
+
+	}
+
+	logmsg("[$pid]\n");
 	$wstat = $?;
 	$wifexited = ($wstat & 0xFF) == 0;
 	$wexitstat = ($wstat >> 8) & 0xFF;
@@ -379,15 +569,20 @@ foreach $file (@files) {
 	}
 
 	if ($tag) {
-		local $/ = undef; # Remove the input record separator to read the whole file at once
 		open(TSTERR, "<$opt_d/$pid.err");
-		$tsterr = <TSTERR>;
+
+		do { $tsterr = <TSTERR> } until ($tsterr =~ /dtrace: /);
+
 		close(TSTERR);
 
-		unless ($tsterr =~ /: \[$tag\] line \d+:/m) {
+		unless ($tsterr =~ /: \[$tag\] line \d+:/) {
 			fail("errtag mismatch: see $pid.err");
 			next;
 		}
+#
+#		sleep after err.Dfoo scripts to allow cyclic clean up to tidy-up.
+#
+		sleep 1;
 	}
 
 	if ($droptag) {
@@ -408,7 +603,6 @@ foreach $file (@files) {
 			next;
 		}
 	}
-	logmsg("[PASS] $file\n");
 
 	unless ($opt_s) {
 		unlink($pid . '.out');
@@ -416,20 +610,32 @@ foreach $file (@files) {
 	}
 }
 
-if (scalar(@files) > 1) {
-	$opt_q = 0; # force final summary to appear regardless of -q option
-	my $timespent = time - $ts;
+if ($opt_a) {
+	#
+	# If we're running with anonymous enablings, we need to restore the
+	# .conf file.
+	#
+	system("dtrace -A 1> /dev/null 2> /dev/null");
+	system("dtrace -ae 1> /dev/null 2> /dev/null");
+	system("modunload -i 0 ; modunload -i 0 ; modunload -i 0");
+	system("update_drv dtrace");
+}
 
-	logmsg("[SUMMARY]\n");
-	logmsg("Passed: " . (scalar(@files) - $errs - $bypassed) . "\n");
+$opt_q = 0; # force final summary to appear regardless of -q option
 
-	if ($bypassed) {
-		logmsg("Bypassed: " . $bypassed . "\n");
-	}
+logmsg("\n==== TEST RESULTS ====\n");
+logmsg("   passed: " . (scalar(@files) - $errs - $bypassed) . "\n");
 
-	logmsg("Failed: " . $errs . "\n");
-	logmsg("Total: " . scalar(@files) . "\n");
-	logmsg("Time: "  . $timespent . "\n");
+if ($bypassed) {
+	logmsg(" bypassed: " . $bypassed . "\n");
+}
+
+logmsg("   failed: " . $errs . "\n");
+logmsg("    total: " . scalar(@files) . "\n");
+
+if ($opt_u) {
+	kill 9, $unloader;
+	waitpid $unloader, 0;
 }
 
 exit($errs != 0);

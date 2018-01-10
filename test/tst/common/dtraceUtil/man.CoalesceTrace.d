@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 
 /*
  * CDDL HEADER START

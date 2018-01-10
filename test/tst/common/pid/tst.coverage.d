@@ -25,7 +25,6 @@
  */
 
 #pragma ident	"@(#)tst.coverage.d	1.1	06/08/28 SMI"
-#pragma D option nolibs
 
 /*
  * ASSERTION: test that we can trace every instruction safely
@@ -46,7 +45,7 @@ BEGIN
 pid$1:libsystem_c.dylib:w*:
 {}
 
-profile:::tick-2
+profile:::tick-4
 /timestamp > timeout/
 {
 	exit(0);

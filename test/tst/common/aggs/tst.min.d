@@ -37,21 +37,20 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=120ms
 
 BEGIN
 {
 	i = 0;
 }
 
-tick-1ms
+tick-10ms
 /i < 1000/
 {
 	@a = min(i);
 	i += 100;
 }
 
-tick-1ms
+tick-10ms
 /i == 1000/
 {
 	exit(0);

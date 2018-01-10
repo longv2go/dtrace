@@ -40,14 +40,14 @@ BEGIN
 	i = 1;
 }
 
-tick-100ms
+tick-1
 /i != 5/
 {
 	tracemem(`avenrun, 20);
 	i++;
 }
 
-tick-100ms
+tick-1
 /i == 5/
 {
 	exit(0);

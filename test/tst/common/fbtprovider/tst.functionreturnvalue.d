@@ -35,9 +35,8 @@
 
 #pragma D option quiet
 #pragma D option statusrate=10ms
-#pragma D option nolibs
 
-fbt::ioctl:return
+fbt::sigprocmask:return
 {
 	printf("The function return value is stored in %u\n", arg1);
 	exit(0);

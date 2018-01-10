@@ -37,10 +37,8 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
-#pragma D option nolibs
 
-tick-10msec
+tick-1
 {
 	printf("The arg0 is %d\n", (int)arg0);
 	exit(0);

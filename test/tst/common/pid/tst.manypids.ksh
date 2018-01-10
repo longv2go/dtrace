@@ -27,7 +27,7 @@
 
 dtrace=/usr/sbin/dtrace
 
-pids=$()
+set -A pids
 
 # for lib in `ls -1 /lib/lib*.so.1 | grep -v ld.so.1`; do
 #	preload=$lib:${preload}

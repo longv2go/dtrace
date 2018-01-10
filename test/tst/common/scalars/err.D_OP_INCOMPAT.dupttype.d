@@ -37,6 +37,6 @@
 
 BEGIN
 {
-	self->x = `real_ncpus;
+	self->x = `max_ncpus;
 	self->x = *`rootvp;
 }

@@ -80,7 +80,7 @@ print "Tracing... Waiting for $command to exit..."
  }
 
  /* SOLARIS: proc::proc_exit:exit */
- proc:::exit
+ proc::exit1:exit
  /execname == strstr(execname, $$1) || $$1 == strstr($$1, execname)/
  {
 	/* print, erm, footer */

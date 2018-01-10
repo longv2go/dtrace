@@ -37,7 +37,6 @@
 
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
 
 int i;
 BEGIN

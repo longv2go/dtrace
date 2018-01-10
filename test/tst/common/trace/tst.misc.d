@@ -44,19 +44,19 @@ BEGIN
 }
 
 
-tick-10msec
+tick-1
 /i != 5/
 {
 	trace("test trace");	/* DT_TYPE_STRING */
 	trace(12345);		/* DT_TYPE_INT (constant) */
 	trace(x++);		/* DT_TYPE_INT (derived) */
 	trace(timestamp);	/* DT_TYPE_INT (variable) */
-	trace(`real_ncpus);	/* CTF type (by value) */
+	trace(`max_ncpus);	/* CTF type (by value) */
 	trace(*`avenrun);	/* CTF type (by ref) */
 	i++;
 }
 
-tick-10msec
+tick-1
 /i == 5/
 {
 	exit(0);

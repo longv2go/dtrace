@@ -35,19 +35,18 @@
 
 #pragma D option quiet
 #pragma D option statusrate=10ms
-#pragma D option nolibs
 
 BEGIN
 {
 	self->traceme = 1;
 }
 
-fbt::ioctl:entry
+fbt::sigprocmask:entry
 {
 	printf("Entering the function\n");
 }
 
-fbt::ioctl:return
+fbt::sigprocmask:return
 {
 	printf("The offset = %u\n", arg0);
 	exit(0);

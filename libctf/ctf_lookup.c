@@ -85,6 +85,7 @@ ctf_lookup_by_name(ctf_file_t *fp, const char *name)
 	const char *p, *q, *end;
 	ctf_id_t type = 0;
 	ctf_id_t ntype, ptype;
+
 	if (name == NULL)
 		return (ctf_set_errno(fp, EINVAL));
 
@@ -130,11 +131,7 @@ ctf_lookup_by_name(ctf_file_t *fp, const char *name)
 
 		for (lp = fp->ctf_lookups; lp->ctl_prefix != NULL; lp++) {
 			if (lp->ctl_prefix[0] == '\0' ||
-				/* We need to make sure here that we will not
-				 * overflow the name buffer in p by adding
-				 * the ctl_len prefix length to it
-				 */
-				(strncmp(p, lp->ctl_prefix, (size_t)(q - p)) == 0 && ((size_t)(q - p) >= lp->ctl_len))) {
+			    strncmp(p, lp->ctl_prefix, (size_t)(q - p)) == 0) {
 				for (p += lp->ctl_len; isspace(*p); p++)
 					continue; /* skip prefix and next ws */
 
@@ -285,19 +282,12 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 
 	if (sp->cts_entsize == sizeof (Elf32_Sym)) {
 		const Elf32_Sym *symp = (Elf32_Sym *)sp->cts_data + symidx;
-		/*
-		 * On Darwin, we do not have symbol type information
-		 */
-#if !defined(__APPLE__)
 		if (ELF32_ST_TYPE(symp->st_info) != STT_FUNC)
 			return (ctf_set_errno(fp, ECTF_NOTFUNC));
-#endif
 	} else {
 		const Elf64_Sym *symp = (Elf64_Sym *)sp->cts_data + symidx;
-#if !defined(__APPLE__)
 		if (ELF64_ST_TYPE(symp->st_info) != STT_FUNC)
 			return (ctf_set_errno(fp, ECTF_NOTFUNC));
-#endif
 	}
 
 	if (fp->ctf_sxlate[symidx] == -1u)

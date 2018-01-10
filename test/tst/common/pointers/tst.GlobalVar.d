@@ -36,25 +36,25 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
+
 
 BEGIN
 {
 	i = 0;
-	ncpusAddress = &`real_ncpus;
+	ncpusAddress = &`max_ncpus;
 	ncpusValue = *ncpusAddress;
-	printf("Address of real_ncpus: %x\n", (int) ncpusAddress);
-	printf("Value of real_ncpus: %d\n", ncpusValue);
+	printf("Address of max_ncpus: %x\n", (int) ncpusAddress);
+	printf("Value of max_ncpus: %d\n", ncpusValue);
 }
 
-profile:::tick-10msec
-/(i < 1) && (&`real_ncpus == ncpusAddress) && (*ncpusAddress == ncpusValue)/
+profile:::tick-1sec
+/(i < 1) && (&`max_ncpus == ncpusAddress) && (*ncpusAddress == ncpusValue)/
 {
 	exit(1);
 }
 
 END
-/(&`real_ncpus == ncpusAddress) && (*ncpusAddress == ncpusValue)/
+/(&`max_ncpus == ncpusAddress) && (*ncpusAddress == ncpusValue)/
 {
 	exit(0);
 }

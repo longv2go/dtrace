@@ -39,15 +39,13 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
-#pragma D option nolibs
 
 BEGIN
 {
 	i = 0;
 }
 
-profile:::tick-10ms
+profile:::tick-1sec
 {
 	printf("%s %s %s %s", probeprov, probemod, probefunc, probename);
 	exit (0);

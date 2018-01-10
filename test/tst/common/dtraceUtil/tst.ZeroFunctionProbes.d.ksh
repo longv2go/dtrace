@@ -1,4 +1,4 @@
-#!/bin/sh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -43,7 +43,7 @@ dtrace=/usr/sbin/dtrace
 
 if [ -f /usr/lib/dtrace/darwin.d ] ; then
 $dtrace -qZf wassup'{printf("Iamkool");}' \
--qf ioctl'{printf("I am done"); exit(0);}'
+-qf sigprocmask'{printf("I am done"); exit(0);}'
 else
 $dtrace -qZf wassup'{printf("Iamkool");}' \
 -qf read'{printf("I am done"); exit(0);}'

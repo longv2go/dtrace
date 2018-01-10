@@ -37,9 +37,8 @@
 
 
 #pragma D option quiet
-#pragma D option nolibs
 
-tick-500000000nsec
+tick-2000000000nsec
 {
 	printf("This test is a simple profile-nsec provider test");
 	exit(0);

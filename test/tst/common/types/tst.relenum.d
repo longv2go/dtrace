@@ -35,7 +35,6 @@
  */
 
 #pragma D option quiet
-#pragma D option statusrate=15ms
 
 enum numbers_1 {
 	zero,
@@ -49,7 +48,7 @@ enum numbers_2 {
 	second
 };
 
-tick-10ms
+tick-1
 /zero >= one || second <= first || zero == second/
 {
 	printf("Shouldn't end up here (1)\n");
@@ -58,7 +57,7 @@ tick-10ms
 	exit(1);
 }
 
-tick-10ms
+tick-1
 /second < one || two > second || null == first/
 {
 	printf("Shouldn't end up here (2)\n");
@@ -67,7 +66,7 @@ tick-10ms
 	exit(1);
 }
 
-tick-10ms
+tick-1
 /first < two && second > one && one != two && zero != first/
 {
 	exit(0);
