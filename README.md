@@ -2,7 +2,7 @@ DTrace
 ------
 苹果官网的 DTrace 源码不能直接编译，需要引入一些内核的头文件，还要做一些修改，这个工程就是修改过后的，可以直接编译 dtrace 目标。
 
-源代码地址： [https://opensource.apple.com/source/dtrace/dtrace-262/]()
+源代码地址： [https://opensource.apple.com/source/dtrace/dtrace/]()
 
 # 更改
 
@@ -29,7 +29,7 @@ DTrace
 
 
 ### 工程修改
-修改 dtrace project 的 Build Settings -> System Header Search Paths 为 $(SRCROOT)/include
+修改 dtrace project 的 Build Settings -> Header Search Paths 为 $(SRCROOT)/include
 
 ### 源码修改
-添加 `int pthread_set_fixedpriority_self();` 这个函数定义来自 libpthread
+......
