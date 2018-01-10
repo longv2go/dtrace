@@ -1,6 +1,6 @@
-dtrace-262
+DTrace
 ------
-苹果官网的 dtrace 源码不能直接编译，需要引入一些内核的头文件，还要做一些修改，这个工程就是修改过后的，可以直接编译 dtrace 目标。
+苹果官网的 DTrace 源码不能直接编译，需要引入一些内核的头文件，还要做一些修改，这个工程就是修改过后的，可以直接编译 dtrace 目标。
 
 源代码地址： [https://opensource.apple.com/source/dtrace/dtrace-262/]()
 
@@ -23,7 +23,6 @@ dtrace-262
     ├── csr.h
     ├── kas_info.h
     └── proc.h
-
 ```
 
 其中 CoreSymbolication 来自 `https://github.com/longv2go/CoreSymbolication`
